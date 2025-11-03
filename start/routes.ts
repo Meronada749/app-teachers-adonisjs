@@ -15,3 +15,6 @@ router.get('/', [TeachersController, 'index']).as('home')
 
 // Route permettant de voir les détails d'un enseignant
 router.get('/teacher/:id/show', [TeachersController, 'show']).as('teacher.show')
+
+// Route permettant de supprimer un enseignant
+router.delete('/teacher/:id/destroy', [TeachersController, 'destroy']).as('teacher.destroy')

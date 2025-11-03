@@ -6,8 +6,11 @@ body {
 
 nav {
   border: black solid 3px;
-  background-color: #e5e5e5;
-  text-align: center;
+  background-color: hsl(0, 0%, 90%);
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .container {
@@ -142,11 +145,47 @@ label {
   width: 30%;
 }
 
-nav {
-  border: black solid 3px;
-  background-color: hsl(0, 0%, 90%);
-  height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.text-danger {
+color: red;
+}
+
+.alert {
+padding: 15px;
+border-radius: 4px;
+font-size: 16px;
+margin: 10px 0;
+}
+
+.alert-success {
+background-color: #d4edda;
+border: 1px solid #c3e6cb;
+color: #155724;
+}
+
+.alert-danger {
+background-color: #f8d7da;
+border: 1px solid #f5c6cb;
+color: #721c24;
+padding: 15px;
+border-radius: 4px;
+font-size: 16px;
+margin: 10px 0;
+}
+
+.field {
+margin-top: 10px;
+margin-bottom: 10px;
+}
+
+.radio {
+margin-top: 5px;
+margin-bottom: 15px;
+}
+
+.containerOptions a,
+.containerOptions form,
+.user-head a {
+text-decoration: none;
+height: 100%;
+margin-left: 1vw;
 }
