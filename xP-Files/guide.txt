@@ -1,6 +1,6 @@
 npm init adonisjs@latest app-teachers-adonisjs -- --db=mysql
 
-Pour pouvoir supprimer un enseignant
+Step 7:- supprimer un enseignant
 
 1. créer une route
 2. ajouter une méthode au controller
@@ -44,3 +44,182 @@ Dans la vue homepage, nous devons mettre à jour le code pour supprimer un ensei
 </button>
 
 </form>
+----------------------------------------------------------------------------------------------------------------------------------------
+
+Step 8:- ajouter un enseignant
+
+1. créer deux routes :
+    une route pour afficher le formulaire permettant de renseigner les informations de l'enseignant
+    une route pour gérer l'ajout de l'enseignant
+2. ajouter un validateur
+3. ajouter deux méthodes au contrôleur
+4. ajouter une vue and 4 components
+5. <a href="{{ route ('teacher.create') }}">Ajouter un enseignant</a> in header.edge
+
+----------------------------------------------------------------------------------------------------------------------------------------
+router.get('/teacher/add', [TeachersController, 'create']).as('teacher.create') // Route permettant d'afficher le formulaire permettant l'ajout d'un enseignant
+
+router.post('/teacher/add', [TeachersController, 'store']).as('teacher.store') // Route permettant l'ajout de l'enseignant
+----------------------------------------------------------------------------------------------------------------------------------------
+node ace make:validator TeacherValidator
+
+import vine from '@vinejs/vine'
+const teacherValidator = vine.compile(
+vine.object({
+    gender: vine.string().minLength(1).maxLength(1),
+    firstname: vine.string().minLength(2),
+    lastname: vine.string().minLength(2),
+    nickname: vine.string().minLength(2),
+    origine: vine.string().minLength(2),
+    sectionId: vine.number(),
+    })
+)
+export { teacherValidator }
+----------------------------------------------------------------------------------------------------------------------------------------
+/**
+* Afficher le formulaire pour créer un nouvel enseignant
+*/
+
+async create({ view }: HttpContext) {
+
+    const sections = await Section.query().orderBy('name', 'asc') // Récupération des sections triées par le nom
+    return view.render('pages/teachers/create', { title: "Ajout d'un enseignant", sections }) // Appel de la vue
+
+}
+
+/**
+* Gérer la soumission du formulaire pour la création d'un enseignant
+*/
+
+async store({ request, session, response }: HttpContext) {
+
+    const { gender, firstname, lastname, nickname, origine, sectionId } = await request.validateUsing(teacherValidator) // Validation des données saisies par l'utilisateur
+    await Teacher.create({ gender, firstname, lastname, nickname, origine, sectionId }) // Création du nouvel enseignant
+    session.flash('success', 'Le nouvel enseignant a été ajouté avec succès !') // Afficher un message à l'utilisateur
+    return response.redirect().toRoute('home') // Rediriger vers la homepage
+
+}
+----------------------------------------------------------------------------------------------------------------------------------------
+
+Ajout de la vue create.edge:
+@component('components/layout', { title: title })
+<h3>
+{{ title }}
+</h3>
+<form action="{{ route('teacher.store') }}" method="post">
+{{ csrfField() }}
+<div class="radio">
+@!component('components/radio', {
+name: 'gender',
+value: old('gender'),
+options: [
+{ value: 'M', label: 'Homme' },
+{ value: 'W', label: 'Femme' },
+{ value: 'O', label: 'Autre' }
+]
+})
+</div>
+<div class="field">
+@!component('components/input', { name: 'firstname', label: 'Prénom', value:
+old('firstname') })
+</div>
+<div class="field">
+@!component('components/input', { name: 'lastname', label: 'Nom', value:
+old('lastname') })
+</div>
+<div class="field">
+@!component('components/input', { name: 'nickname', label: 'Surnom', value:
+old('nickname') })
+</div>
+<div class="field">
+@!component('components/textarea', { name: 'origine', label: 'Origine',
+value: old('origine') })
+</div>
+<div class="field">
+@!component('components/select', {
+name: 'sectionId',
+label: 'Section',
+sections: sections,
+value: old('section'),
+placeholder: 'Choisissez une section'
+})
+</div>
+<button type="submit">Enregistrer</button>
+</form>
+@endcomponent
+----------------------------------------------------------------------------------------------------------------------------------------
+
+Le composant radio :
+@each((option, index) in options)
+<input
+type="radio"
+id="{{ name }}{{ index }}"
+name="{{ name }}"
+value="{{ option.value }}"
+{{ option.value === (value || old(name)) ? 'checked' : '' }}
+/>
+<label for="{{ name }}{{ index }}">{{ option.label }}</label>
+@end
+@if(flashMessages.get('errors.' + name))
+<p class="text-danger">
+{{ flashMessages.get('errors.' + name)[0] }}
+</p>
+@endif
+----------------------------------------------------------------------------------------------------------------------------------------
+
+Le composant input :
+<label for="{{ name }}">{{ label }}</label>
+<input
+type="{{ type || text }}"
+name="{{ name }}"
+id="{{ name }}"
+value="{{ value || '' }}"
+placeholder="{{ label }}"
+/>
+@inputError(name)
+@each(message in $messages)
+<p class="text-danger">
+{{ message }}
+</p>
+@end
+@end
+----------------------------------------------------------------------------------------------------------------------------------------
+
+Le composant textarea :
+<label for="{{ name }}">{{ label }} </label>
+
+<textarea name="{{ name }}" id="{{ name }}" placeholder="{{ label }}">
+  {{ value || '' }}
+</textarea>
+
+@inputError(name)
+  @each(message in $messages)
+    <p class="text-danger">
+      {{ message }}
+    </p>
+  @end
+@end
+
+----------------------------------------------------------------------------------------------------------------------------------------
+
+Le composant select :
+<label for="{{ name }}">{{ label }}</label>
+<select name="{{ name }}" id="{{ name }}" class="{{ cls || 'form-control' }}">
+<option value="">
+{{ placeholder || 'Sélectionnez une option' }}
+</option>
+@each(section in sections)
+<option value="{{ section.id }}" {{ section.id == (value || old(name)) ?
+'selected' : '' }}>
+{{ section.name }}
+</option>
+@end
+</select>
+@if(flashMessages.get('errors.sectionId'))
+<p class="text-danger">
+{{ flashMessages.get('errors.sectionId') }}
+</p>
+@endif
+----------------------------------------------------------------------------------------------------------------------------------------
+
+Step 9:-
