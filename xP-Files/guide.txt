@@ -1,0 +1,46 @@
+npm init adonisjs@latest app-teachers-adonisjs -- --db=mysql
+
+Pour pouvoir supprimer un enseignant
+
+1. créer une route
+2. ajouter une méthode au controller
+
+Par contre, nous n'aurons pas besoin d'une nouvelle vue, car nous allons rediriger l'utilisateur vers la home.
+Pour voir utiliser la méthode delete, il faut donc activer allowMethodSpoofing dans le fichier config/app.ts.
+
+----------------------------------------------------------------------------------------------------------------------------------------
+
+Dans routes.ts
+
+router.delete('/teacher/:id/destroy', [TeachersController,'destroy']).as('teacher.destroy') // Route permettant de supprimer un enseignant
+
+----------------------------------------------------------------------------------------------------------------------------------------
+
+Dans teachers_controller.ts
+
+/**
+* Supprimer un enseignant
+*/
+
+async destroy({ params, session, response }: HttpContext) {
+
+    const teacher = await Teacher.findOrFail(params.id) // Sélectionne l'enseignant à supprimer
+    await teacher.delete() // Supprime l'enseignant
+    session.flash('success', "L'enseignant a été supprimé avec succès !") // Afficher un message à l'utilisateur
+    return response.redirect().toRoute('home') // Redirige l'utilisateur sur la home
+
+}
+
+----------------------------------------------------------------------------------------------------------------------------------------
+Modifier la homepage et la page des détails
+Dans la vue homepage, nous devons mettre à jour le code pour supprimer un enseignant.
+
+<form action="{{ route('teacher.destroy', { id: teacher.id }) }}?_method=DELETE" method="POST" style="display: inline">
+
+{{ csrfField() }}
+
+<button type="submit" style="background: none; border: none; padding: 0; cursor: pointer;">
+<img height="20em" src="/img/delete.png" alt="delete" />
+</button>
+
+</form>
