@@ -188,9 +188,7 @@ placeholder="{{ label }}"
 Le composant textarea :
 <label for="{{ name }}">{{ label }} </label>
 
-<textarea name="{{ name }}" id="{{ name }}" placeholder="{{ label }}">
-  {{ value || '' }}
-</textarea>
+<textarea name="{{ name }}" id="{{ name }}" placeholder="{{ label }}">{{ value || '' }}</textarea>
 
 @inputError(name)
   @each(message in $messages)
@@ -222,4 +220,163 @@ Le composant select :
 @endif
 ----------------------------------------------------------------------------------------------------------------------------------------
 
-Step 9:-
+Step 9:- modifier un enseignant
+
+1. créer deux routes :
+    une route pour afficher le formulaire permettant de renseigner les informations de l'enseignant
+    une route pour gérer l'ajout de l'enseignant
+2. ajouter deux méthodes au contrôleur
+3. ajouter une vue
+4. modify home.edge and show.edge
+
+----------------------------------------------------------------------------------------------------------------------------------------
+// Route permettant d'afficher le formulaire permettant la mise à jour d'un enseignant
+router.get('/teacher/:id/edit', [TeachersController, 'edit']).as('teacher.edit')
+
+// Route permettant la modification de l'enseignant
+router.post('/teacher/:id/update', [TeachersController, 'update']).as('teacher.update')
+----------------------------------------------------------------------------------------------------------------------------------------
+/**
+* Afficher le formulaire permettant la mise à jour d'un enseignant
+*/
+
+async edit({ params, view }: HttpContext) {
+
+const teacher = await Teacher.findOrFail(params.id)
+
+const sections = await Section.query().orderBy('name', 'asc')
+
+// Afficher la vue
+return view.render('pages/teachers/edit.edge', {
+  title: 'Modifier un enseignant',
+  teacher,
+  sections,
+  })
+}
+
+/**
+* Gérer la soumission du formulaire pour la mise à jour d'un enseignant
+*/
+
+async update({ params, request, session, response }: HttpContext) {
+
+const { gender, firstname, lastname, nickname, origine, sectionId } = await request.validateUsing(teacherValidator)
+
+const teacher = await Teacher.findOrFail(params.id)
+
+// Si un enseignant correspond à l'id
+if (teacher) {
+await teacher.merge({ gender, firstname, lastname, nickname, origine, sectionId }).save()
+}
+session.flash('success', "L'enseignant a été mis à jour avec succès !")
+
+return response.redirect().toRoute('home')
+}
+----------------------------------------------------------------------------------------------------------------------------------------
+Ajout de la vue edit.edge:
+@component('components/layout', { title: title })
+<h3>
+{{ title }}
+</h3>
+<form action="{{ route('teacher.update', {id: teacher.id}) }}" method="post">
+{{ csrfField() }}
+<div class="radio">
+@!component('components/radio', {
+name: 'gender',
+value: old('gender') || (teacher ? teacher.gender : ''),
+options: [
+{ value: 'M', label: 'Homme' },
+{ value: 'W', label: 'Femme' },
+{ value: 'O', label: 'Autre' }
+]
+})
+</div>
+<div class="field">
+@!component('components/input', { name: 'firstname', label: 'Prénom', value:
+old('firstname') || (teacher ? teacher.firstname : '') })
+</div>
+<div class="field">
+@!component('components/input', { name: 'lastname', label: 'Nom', value:
+old('lastname') || (teacher ? teacher.lastname : '') })
+</div>
+<div class="field">
+@!component('components/input', { name: 'nickname', label: 'Surnom', value:
+old('nickname') || ( teacher ? teacher.nickname : '') })
+</div>
+<div class="field">
+@!component('components/textarea', { name: 'origine', label: 'Origine',
+value: old('origine') || ( teacher ? teacher.origine : '') })
+</div>
+<div class="field">
+@!component('components/select', {
+name: 'sectionId',
+label: 'Section',
+sections: sections,
+value: old('section') || (teacher ? teacher.sectionId : ''),
+placeholder: 'Choisissez une section'
+})
+</div>
+<button type="submit">Enregistrer</button>
+</form>
+@endcomponent
+----------------------------------------------------------------------------------------------------------------------------------------
+<a href="{{ route('teacher.edit', {id: teacher.id}) }}">
+<img height="20em" src="/img/edit.png" alt="edit" />
+</a>
+----------------------------------------------------------------------------------------------------------------------------------------
+mix create.edge and edit.edge
+
+créer un fichier views/partials/createOrUpdateForm.edge :
+
+{{ csrfField() }}
+<div class="radio">
+  @!component('components/radio', {
+  name: 'gender',
+  value: old('gender') || (teacher ? teacher.gender : ''),
+  options: [
+  { value: 'M', label: 'Homme' },
+  { value: 'W', label: 'Femme' },
+  { value: 'O', label: 'Autre' }
+  ]
+  })
+</div>
+
+<div class="field">
+  @!component('components/input', { name: 'firstname', label: 'Prénom', value: old('firstname') || (teacher ? teacher.firstname : '') })
+</div>
+
+<div class="field">
+  @!component('components/input', { name: 'lastname', label: 'Nom', value: old('lastname') || (teacher ? teacher.lastname : '') })
+</div>
+
+<div class="field">
+  @!component('components/input', { name: 'nickname', label: 'Surnom', value: old('nickname') || ( teacher ? teacher.nickname : '') })
+</div>
+
+<div class="field">
+  @!component('components/textarea', { name: 'origine', label: 'Origine', value: old('origine') || ( teacher ? teacher.origine : '') })
+</div>
+
+<div class="field">
+  @!component('components/select', {
+    name: 'sectionId',
+    label: 'Section',
+    sections: sections,
+    value: old('section') || (teacher ? teacher.sectionId : ''),
+    placeholder: 'Choisissez une section'
+  })
+</div>
+<button type="submit">Enregistrer</button>
+----------------------------------------------------------------------------------------------------------------------------------------
+  <form action="{{ route('teacher.store') }}" method="post">
+    @include('partials/createOrUpdateForm')
+  </form>
+----------------------------------------------------------------------------------------------------------------------------------------
+  <form action="{{ route('teacher.update', {id: teacher.id}) }}" method="post">
+    @include('partials/createOrUpdateForm')
+  </form>
+----------------------------------------------------------------------------------------------------------------------------------------
+
+Step 10:- Authentification
+
+1. migration of user table

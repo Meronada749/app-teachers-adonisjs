@@ -50,13 +50,41 @@ export default class TeachersController {
 
   /**
    * Edit individual record
+   * Afficher le formulaire permettant la mise à jour d'un enseignant
    */
-  async edit({ params }: HttpContext) {}
+
+  async edit({ params, view }: HttpContext) {
+    const teacher = await Teacher.findOrFail(params.id)
+
+    const sections = await Section.query().orderBy('name', 'asc')
+
+    // Afficher la vue
+    return view.render('pages/teachers/edit.edge', {
+      title: 'Modifier un enseignant',
+      teacher,
+      sections,
+    })
+  }
 
   /**
    * Handle form submission for the edit action
+   * Gérer la soumission du formulaire pour la mise à jour d'un enseignant
    */
-  async update({ params, request }: HttpContext) {}
+
+  async update({ params, request, session, response }: HttpContext) {
+    const { gender, firstname, lastname, nickname, origine, sectionId } =
+      await request.validateUsing(teacherValidator)
+
+    const teacher = await Teacher.findOrFail(params.id)
+
+    // Si un enseignant correspond à l'id
+    if (teacher) {
+      await teacher.merge({ gender, firstname, lastname, nickname, origine, sectionId }).save()
+    }
+    session.flash('success', "L'enseignant a été mis à jour avec succès !")
+
+    return response.redirect().toRoute('home')
+  }
 
   /**
    * Delete record
