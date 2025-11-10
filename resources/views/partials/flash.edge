@@ -3,8 +3,23 @@
     {{ old('success') }}
   </div>
 @end
+
 @if(flashMessages.has('error'))
   <div class="alert alert-danger">
     {{ old('error') }}
   </div>
 @end
+
+@error('E_INVALID_CREDENTIALS')
+  <div class="alert alert-danger">
+    {{ $message }}
+  </div>
+@end
+{{--  ```
+## Etat de l'application à la fin de cette étape
+<img src="./doc/images/step11-fin.png" />
+
+Dans la prochaine étape
+<a href="https://github.com/GregLeBarbar/app-teachersadonisjs/tree/step12">
+  step12
+</a>, nous allons mettre en place le logout.  --}}
