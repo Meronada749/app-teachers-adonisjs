@@ -142,7 +142,7 @@ label {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 30%;
+  /* width: 30%; */
 }
 
 .text-danger {

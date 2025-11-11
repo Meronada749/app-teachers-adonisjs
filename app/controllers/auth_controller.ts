@@ -23,4 +23,17 @@ export default class AuthController {
 
     return response.redirect().toRoute('home')
   }
+
+  /**
+   * Gérer la déconnexion d'un utilisateur
+   */
+
+  async handleLogout({ auth, session, response }: HttpContext) {
+    // Utilise le Guard 'web' pour déconnecter l'utilisateur -> Voir le fichier config / auth.ts
+    await auth.use('web').logout()
+
+    session.flash('success', "L'utilisateur s'est déconnecté avec succès")
+
+    return response.redirect().toRoute('home')
+  }
 }

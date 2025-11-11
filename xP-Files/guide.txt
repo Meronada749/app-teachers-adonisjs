@@ -412,11 +412,11 @@ fix models
 
 node ace migration:fresh --seed
 ----------------------------------------------------------------------------------------------------------------------------------------
-Step 10:- Login
+Step 11:- Login
 
-1. une nouvelle route
-2. nouveau contrôleur et d'une méthode dans ce contrôleur
-3. validateur
+1. route
+2. controller et d'une méthode dans ce contrôleur
+3. validator
 ----------------------------------------------------------------------------------------------------------------------------------------
 // Route permettant de se connecter
 router.post('/login', [AuthController, 'handleLogin']).as('auth.handleLogin')
@@ -505,9 +505,138 @@ views/partials/flash.edge
 {{ $message }}
 </div>
 @end
-```
-## Etat de l'application à la fin de cette étape
-<img src="./doc/images/step11-fin.png" />
-Dans la prochaine étape <a href="https://github.com/GregLeBarbar/app-teachersadonisjs/
-tree/step12">step12</a>, nous allons mettre en place le logout.
+----------------------------------------------------------------------------------------------------------------------------------------
+
+Step 12:- Logout
+
+1. route
+2. méthode dans AuthController
+----------------------------------------------------------------------------------------------------------------------------------------
+// Route permettant de se déconnecter
+router.post('/logout', [AuthController, 'handleLogout']).as('auth.handleLogout')
+----------------------------------------------------------------------------------------------------------------------------------------
+/**
+* Gérer la déconnexion d'un utilisateur
+*/
+
+async handleLogout({ auth, session, response }: HttpContext) {
+// Utilise le Guard 'web' pour déconnecter l'utilisateur -> Voir le fichier
+config/auth.ts
+await auth.use('web').logout()
+// Affiche un message à l'utilisateur
+session.flash('success', "L'utilisateur s'est déconnecté avec succès")
+// Redirige la réponse sur la route 'home'
+return response.redirect().toRoute('home')
+}
+----------------------------------------------------------------------------------------------------------------------------------------
+header.edge
+
+...
+@if(auth.isAuthenticated)
+{{ auth.user.username }} ({{ auth.user.isAdmin ? 'admin' : 'user' }})
+<form action="{{ route('auth.handleLogout') }}" method="post">
+{{ csrfField() }}
+<button type="submit" class="btn btn-logout">Se déconnecter</button>
+</form>
+@else
+...
+----------------------------------------------------------------------------------------------------------------------------------------
+Option Quand l’utiliser
+Server Pour des middlewares globaux applicables à toutes les requêtes.
+Router Pour des middlewares applicables uniquement aux requêtes qui correspondent à des routes.
+Named Pour des middlewares spécifiques appliqués manuellement à certaines routes ou groupes.
+
+Step 13:- Gestion des rôles
+
+.use(middleware.auth()) for routes
+.use(middleware.guest()) for routes
+
+----------------------------------------------------------------------------------------------------------------------------------------
+auth_middleware.ts, la variable redirectTo est définie avec la valeur '/login' et changer en '/'
+----------------------------------------------------------------------------------------------------------------------------------------
+
+node ace make:middleware ShareAuthState choose router
+
+----------------------------------------------------------------------------------------------------------------------------------------
+in ShareAuthStateMiddleware.ts
+
+import type { HttpContext } from '@adonisjs/core/http'
+import type { NextFn } from '@adonisjs/core/types/http'
+export default class ShareAuthStateMiddleware {
+public async handle(ctx: HttpContext, next: NextFn) {
+/**
+* Middleware logic goes here (before the next call)
+*/
+const { auth, view } = ctx // Extraction de auth et view depuis le contexte
+try {
+// Vérifie si l'utilisateur est authentifié
+const isAuthenticated = await auth.check()
+// Partage la variable dans les vues
+view.share({ isAuthenticated })
+} catch (error) {
+// Gestion d'erreurs éventuelles
+console.log(error)
+view.share({ isAuthenticated: false })
+}
+// Passe au middleware suivant ou à la logique de la route
+await next()
+}
+}
+
+home.edge and header.edge
+@if(isAuthenticated)
+@endif
+----------------------------------------------------------------------------------------------------------------------------------------
+
+node ace make:middleware EnsureAdmin choose named
+
+----------------------------------------------------------------------------------------------------------------------------------------
+in EnsureAdminMiddleware.ts
+import type { HttpContext } from '@adonisjs/core/http'
+import type { NextFn } from '@adonisjs/core/types/http'
+
+export default class EnsureAdminMiddleware {
+  async handle(ctx: HttpContext, next: NextFn) {
+    const { auth, session, response } = ctx
+    try {
+      // Vérifie si l'utilisateur est connecté
+      const isAuthenticated = await auth.check()
+      if (!isAuthenticated || !auth.user?.isAdmin) {
+        // Affiche un message d'erreur à l'utilisateur
+        session.flash('error', 'Vous devez avoir les droits admin pour accéder à cette page')
+        // Redirige l'utilisateur vers la page d'accueil
+        return response.redirect().toRoute('home')
+      }
+      // Passe au middleware suivant ou à la logique de la route
+      await next()
+    } catch (error) {
+      console.error('Erreur dans EnsureAdminMiddleware :', error)
+      // Redirige vers la page d'accueil en cas d'erreur
+      session.flash('error', 'Une erreur est survenue')
+      return response.redirect().toRoute('home')
+    }
+  }
+}
+----------------------------------------------------------------------------------------------------------------------------------------
+.use(middleware.ensureAdmin())
+----------------------------------------------------------------------------------------------------------------------------------------
+La dernière chose qu'il nous reste à faire, est de nous assurer que seul un admin peut accéder aux actions
+edit et destroy depuis la vue show.
+
+in show.edge
+
+@if(auth.user.isAdmin)
+<div class="actions">
+<a href="{{ route('teacher.edit', {id: teacher.id}) }}">
+<img height="20em" src="/img/edit.png" alt="edit" />
+</a>
+<a
+onClick="return confirm(`Voulez-vous vraiment supprimer l'enseignant {{
+teacher.lastname }} {{ teacher.firstname }} ?`)"
+href="{{ route('teacher.destroy', {id: teacher.id}) }}"
+>
+<img height="20em" src="/img/delete.png" alt="delete" />
+</a>
+</div>
+@endif
 ----------------------------------------------------------------------------------------------------------------------------------------
